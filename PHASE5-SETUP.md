@@ -46,7 +46,7 @@ Backend URL: http://127.0.0.1:8000
 
 ### 4. OpenAI API
 ```
-API Key: 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
+API Key: your_openai_api_key_here
 ```
 
 ## 🏗️ Phase 5 Architecture

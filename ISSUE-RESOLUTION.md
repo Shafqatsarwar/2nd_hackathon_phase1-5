@@ -65,12 +65,12 @@ Check that `.env.local` files have correct values:
 **Frontend** (`src/frontend/.env.local`):
 ```env
 NEXT_PUBLIC_BACKEND_URL=http://127.0.0.1:8000
-OPENAI_API_KEY=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
+OPENAI_API_KEY=your_openai_api_key_here
 ```
 
 **Backend** (`src/backend/.env.local`):
 ```env
-OPENAI_API_KEY=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
+OPENAI_API_KEY=your_openai_api_key_here
 DATABASE_URL=postgresql://neondb_owner:npg_zhJvIP74aTle@ep-long-waterfall-abcwopjg-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 ```
 

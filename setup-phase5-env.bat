@@ -21,7 +21,7 @@ echo # Database Connection
 echo DATABASE_URL=postgresql://neondb_owner:npg_zhJvIP74aTle@ep-long-waterfall-abcwopjg-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require^&channel_binding=require
 echo.
 echo # OpenAI API Key for Phase III AI Chatbot
-echo OPENAI_API_KEY=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
+echo OPENAI_API_KEY=your_openai_api_key_here
 ) > src\frontend\.env.local
 
 REM Create backend .env.local
@@ -37,7 +37,7 @@ echo # Better Auth Secret
 echo BETTER_AUTH_SECRET=my_super_secure_hackathon_secret_key_2025
 echo.
 echo # OpenAI API Key for Phase III AI Chatbot
-echo OPENAI_API_KEY=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
+echo OPENAI_API_KEY=your_openai_api_key_here
 ) > src\backend\.env.local
 
 REM Create root .env for Docker Compose
@@ -57,7 +57,7 @@ echo # Backend API URL
 echo NEXT_PUBLIC_BACKEND_URL=http://127.0.0.1:8000
 echo.
 echo # OpenAI API Key
-echo OPENAI_API_KEY=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
+echo OPENAI_API_KEY=your_openai_api_key_here
 ) > .env
 
 REM Create .env.production for Vercel
@@ -71,7 +71,7 @@ echo NEXT_PUBLIC_BETTER_AUTH_URL=https://your-app.vercel.app
 echo NEXT_PUBLIC_BACKEND_URL=https://your-backend.vercel.app
 echo POSTGRES_URL=postgresql://neondb_owner:npg_zhJvIP74aTle@ep-long-waterfall-abcwopjg-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require^&channel_binding=require
 echo DATABASE_URL=postgresql://neondb_owner:npg_zhJvIP74aTle@ep-long-waterfall-abcwopjg-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require^&channel_binding=require
-echo OPENAI_API_KEY=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
+echo OPENAI_API_KEY=your_openai_api_key_here
 ) > .env.production
 
 echo.
