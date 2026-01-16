@@ -1,0 +1,6 @@
+apiVersion: v2
+name: todo-app
+description: A Helm chart for Todo App with Next.js and FastAPI
+type: application
+version: 0.1.0
+text: 1.16.0

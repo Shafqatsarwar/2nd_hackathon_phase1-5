@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "spec-kit": {
+      "command": "specifyplus-mcp",
+      "args": [],
+      "env": {}
+    },
+    "dapr-mcp": {
+      "command": "dapr-mcp-server",
+      "args": [],
+      "env": {}
+    }
+  },
+  "defaultModel": "claude-4-5-sonnet-20251001",
+  "enableTelemetry": false
+}

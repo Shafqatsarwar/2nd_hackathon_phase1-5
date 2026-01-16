@@ -1,0 +1,28 @@
+{
+  "name": "evolution-of-todo-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "src/frontend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=src/frontend",
+    "build": "npm run build --workspace=src/frontend",
+    "start": "npm run start --workspace=src/frontend",
+    "lint": "npm run lint --workspace=src/frontend",
+    "db:init": "tsx scripts/init-db.ts"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@vercel/postgres": "^0.10.0",
+    "tsx": "^4.21.0"
+  },
+  "devDependencies": {
+    "prisma": "^7.2.0"
+  },
+  "overrides": {
+    "zod": "^3.25.76"
+  }
+}
