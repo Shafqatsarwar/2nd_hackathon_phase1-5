@@ -310,3 +310,7 @@ auth.db
 uploads/
 media/
 .env*.local
+local-secrets.yaml
+
+.env.vercel
+.vercel

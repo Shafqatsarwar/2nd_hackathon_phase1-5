@@ -173,6 +173,19 @@ class TodoOpenAIAgent:
             }
         })
 
+        self.tools.append({
+            "type": "function",
+            "function": {
+                "name": "get_smart_insight",
+                "description": "Get a motivational quote and an analysis of your current workload",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }
+        })
+
     async def process_message(self, user_id: str, message: str, session: Session):
         """
         Process a user message using OpenAI agent with MCP tools and stream the response.
@@ -190,14 +203,18 @@ class TodoOpenAIAgent:
             {
                 "role": "system",
                 "content": (
-                    "You are a highly capable AI assistant. Your primary roles are:\n"
-                    "1. Manage tasks/todos using the provided tools.\n"
-                    "2. Orchestrate GitHub operations via MCP tools.\n"
-                    "3. Answer ANY additional user questions by searching the web for real-time, accurate information.\n\n"
-                    "If a user asks about news, facts, external events, or anything not in their task list, ALWAYS use the 'web_search' tool to provide a helpful, cited response. "
-                    "Always use the appropriate tool for the user's request. "
-                    "Only use the tools provided, do not try to access the database directly.\n"
-                    f"The current user ID is: {user_id}"
+                    "You are 'Evolution AI', a premium task assistant. Your personality is helpful, professional, and proactive.\n\n"
+                    "CORE CAPABILITIES:\n"
+                    "1. Task Management: Use tools to add, list, complete, or delete tasks. Be smart about priorities.\n"
+                    "2. GitHub Operations: Handle issues and PRs for the user.\n"
+                    "3. Real-time Search: Use 'web_search' for news, facts, market rates, and current events.\n"
+                    "4. Weather: Use weather tools to provide localized updates.\n\n"
+                    "STRICT RULES:\n"
+                    "- ALWAYS use the 'web_search' tool for external facts (news, sports, gold rates, etc.).\n"
+                    "- If the weather is 'Rainy' or 'Snowy' and the user creates a task that sounds like an outdoor activity (e.g., 'Jogging', 'Car wash'), gently warn them.\n"
+                    "- If the user's task list is crowded (>5 pending tasks), suggest a priority focus.\n"
+                    "- When using tools, summarize the result naturally. DON'T just dump raw JSON or raw tool output.\n"
+                    f"- Current User Context: {user_id}"
                 )
             },
             {
@@ -206,140 +223,109 @@ class TodoOpenAIAgent:
             }
         ]
 
-        # Call the OpenAI API with function calling and streaming
-        stream = self.client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=messages,
-            tools=self.tools,
-            tool_choice="auto",
-            stream=True
-        )
-
-        # Process the stream and handle tool calls
-        tool_calls = []
-        current_tool_call = None
+        # Max number of tool-calling loops to prevent infinite loops
+        max_iterations = 5
         
-        for chunk in stream:
-            delta = chunk.choices[0].delta
+        for iteration in range(max_iterations):
+            # Call the OpenAI API
+            response = self.client.chat.completions.create(
+                model="gpt-4o-mini", # Upgraded from gpt-3.5-turbo
+                messages=messages,
+                tools=self.tools,
+                tool_choice="auto"
+            )
             
-            # Handle text content
-            if delta.content:
-                yield delta.content
+            assistant_message = response.choices[0].message
+            messages.append(assistant_message)
             
-            # Handle tool calls
-            if delta.tool_calls:
-                for tool_call_chunk in delta.tool_calls:
-                    if tool_call_chunk.index is not None:
-                        # Start new tool call or continue existing one
-                        while len(tool_calls) <= tool_call_chunk.index:
-                            tool_calls.append({
-                                "id": "",
-                                "type": "function",
-                                "function": {"name": "", "arguments": ""}
-                            })
-                        
-                        current_tool_call = tool_calls[tool_call_chunk.index]
-                        
-                        if tool_call_chunk.id:
-                            current_tool_call["id"] = tool_call_chunk.id
-                        
-                        if tool_call_chunk.function:
-                            if tool_call_chunk.function.name:
-                                current_tool_call["function"]["name"] = tool_call_chunk.function.name
-                            if tool_call_chunk.function.arguments:
-                                current_tool_call["function"]["arguments"] += tool_call_chunk.function.arguments
-        
-        # Execute tool calls if any
-        if tool_calls:
+            # If no tool calls, we're done - yield the final content
+            if not assistant_message.tool_calls:
+                if assistant_message.content:
+                    yield assistant_message.content
+                break
+                
+            # Execute tool calls
             import json
             from .weather_service import get_weather_info, get_weather_forecast
             from .web_search import search_web
             
-            for tool_call in tool_calls:
-                function_name = tool_call["function"]["name"]
+            for tool_call in assistant_message.tool_calls:
+                function_name = tool_call.function.name
                 try:
-                    function_args = json.loads(tool_call["function"]["arguments"])
+                    function_args = json.loads(tool_call.function.arguments)
                 except json.JSONDecodeError:
-                    yield f"\n\n⚠️ Error parsing arguments for {function_name}"
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "name": function_name,
+                        "content": "Error: Invalid JSON arguments"
+                    })
                     continue
                 
-                # Execute the appropriate tool
+                print(f"DEBUG: Executing tool '{function_name}' with args {function_args}")
+                yield f"... Thinking... (using {function_name})\n"
+                
+                tool_result = ""
                 try:
                     if function_name == "list_tasks":
-                        # Get session for this operation
                         from ..database import get_session as get_db_session
+                        from sqlmodel import select
+                        from ..models import Task
                         session_gen = get_db_session()
                         db_session = next(session_gen)
-                        try:
-                            from sqlmodel import select
-                            from ..models import Task
-                            tasks = db_session.exec(
-                                select(Task).where(Task.user_id == function_args.get("user_id"))
-                            ).all()
-                            yield f"\n\n📋 Your tasks:\n"
-                            if tasks:
-                                for task in tasks:
-                                    status = "✅" if task.completed else "⬜"
-                                    yield f"{status} {task.title}\n"
-                            else:
-                                yield "No tasks found. Create your first task!"
-                        finally:
-                            try:
-                                next(session_gen)
-                            except StopIteration:
-                                pass
+                        tasks = db_session.exec(select(Task).where(Task.user_id == user_id)).all()
+                        tool_result = "\n".join([f"- [{ 'X' if t.completed else ' ' }] ID {t.id}: {t.title} ({t.priority})" for t in tasks]) or "No tasks found."
                     
                     elif function_name == "add_task":
-                        # Get session for this operation
                         from ..database import get_session as get_db_session
                         from ..models import Task, TaskCreate
                         session_gen = get_db_session()
                         db_session = next(session_gen)
-                        try:
-                            task_data = TaskCreate(
-                                title=function_args.get("title"),
-                                description=function_args.get("description", ""),
-                                priority=function_args.get("priority", "medium"),
-                                is_recurring=function_args.get("is_recurring", False),
-                                recurrence_interval=function_args.get("recurrence_interval")
-                            )
-                            db_task = Task.model_validate(task_data, update={"user_id": function_args.get("user_id")})
-                            db_session.add(db_task)
-                            db_session.commit()
-                            db_session.refresh(db_task)
-                            
-                            # Analyze the task
-                            from ..agents.skills.analysis import analyze_sentiment, suggest_tags
-                            suggested_priority = analyze_sentiment(db_task.title)
-                            tags = suggest_tags(db_task.title)
-                            
-                            yield f"\n\n✅ Task created: {db_task.title}"
-                            yield f"\n💡 Suggested priority: {suggested_priority}"
-                            if tags:
-                                yield f"\n🏷️ Suggested tags: {', '.join(tags)}"
-                        finally:
-                            try:
-                                next(session_gen)
-                            except StopIteration:
-                                pass
+                        task_data = TaskCreate(
+                            title=function_args.get("title"),
+                            description=function_args.get("description", ""),
+                            priority=function_args.get("priority", "medium")
+                        )
+                        db_task = Task.model_validate(task_data, update={"user_id": user_id})
+                        db_session.add(db_task)
+                        db_session.commit()
+                        db_session.refresh(db_task)
+                        tool_result = f"Successfully created task ID {db_task.id}: {db_task.title}"
+                    
+                    elif function_name == "get_smart_insight":
+                        from ..database import get_session as get_db_session
+                        from sqlmodel import select
+                        from ..models import Task
+                        from ..agents.skills.advisor import get_smart_insight as advisor_insight
+                        session_gen = get_db_session()
+                        db_session = next(session_gen)
+                        tasks = db_session.exec(select(Task).where(Task.user_id == user_id)).all()
+                        task_dicts = [{"title": t.title, "priority": t.priority, "completed": t.completed} for t in tasks]
+                        tool_result = advisor_insight(user_id, task_dicts)
                     
                     elif function_name == "get_current_weather":
-                        result = get_weather_info(function_args.get("location"))
-                        yield f"\n\n{result}"
-                    
-                    elif function_name == "get_weather_forecast":
-                        result = get_weather_forecast(function_args.get("location"))
-                        yield f"\n\n{result}"
+                        tool_result = get_weather_info(function_args.get("location"))
                     
                     elif function_name == "web_search":
-                        result = search_web(function_args.get("query"))
-                        yield f"\n\n🔍 {result}"
+                        tool_result = search_web(function_args.get("query"))
                     
+                    elif function_name in ["create_github_issue", "create_pull_request", "list_repositories"]:
+                        # Re-use the existing github tools logic
+                        tool_result = self.github_tools.call_function(function_name, function_args)
+                        
                     else:
-                        yield f"\n\n⚠️ Tool {function_name} not yet implemented in streaming mode"
+                        tool_result = f"Error: Tool '{function_name}' is not yet fully implemented in the orchestrator."
                 
                 except Exception as e:
-                    yield f"\n\n⚠️ Error executing {function_name}: {str(e)}"
+                    tool_result = f"Error executing tool: {str(e)}"
+                
+                # Add tool result to conversation history
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "name": function_name,
+                    "content": tool_result
+                })
     
     def _get_demo_response(self, message: str, user_id: str) -> str:
         """

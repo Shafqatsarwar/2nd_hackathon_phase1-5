@@ -154,6 +154,26 @@ class GitHubMCPTools:
         endpoint = "/user"
         return self._make_request("GET", endpoint)
 
+    def call_function(self, name: str, args: Dict) -> str:
+        """Dispatcher for GitHub tools"""
+        import json
+        try:
+            if name == "create_github_issue":
+                return json.dumps(self.create_issue(args.get("title"), args.get("body", ""), args.get("labels")))
+            elif name == "list_github_issues":
+                return json.dumps(self.list_issues(args.get("state", "open"), args.get("labels")))
+            elif name == "create_github_pull_request":
+                return json.dumps(self.create_pull_request(args.get("title"), args.get("body"), args.get("head"), args.get("base", "main")))
+            elif name == "get_github_repo_info":
+                return json.dumps(self.get_repo_info())
+            elif name == "list_github_repo_contents":
+                return json.dumps(self.list_repo_contents(args.get("path", "/")))
+            elif name == "create_github_gist":
+                return json.dumps(self.create_gist(args.get("description"), args.get("files"), args.get("public", True)))
+            return f"Error: GitHub function {name} not found."
+        except Exception as e:
+            return f"Error calling GitHub function: {str(e)}"
+
 
 # Define the GitHub tools for MCP
 GITHUB_TOOLS = [

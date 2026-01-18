@@ -17,12 +17,15 @@
   },
   "dependencies": {
     "@vercel/postgres": "^0.10.0",
+    "better-auth": "^1.4.14",
+    "dotenv": "^17.2.3",
     "tsx": "^4.21.0"
   },
   "devDependencies": {
-    "prisma": "^7.2.0"
+    "prisma": "^6.19.2"
   },
   "overrides": {
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "ai": "3.4.33"
   }
 }

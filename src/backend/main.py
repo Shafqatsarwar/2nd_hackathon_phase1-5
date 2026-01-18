@@ -82,7 +82,7 @@ def on_startup():
             admin_user = User(id=admin_id, email=admin_email, full_name="Admin")
             session.add(admin_user)
             session.commit()
-            print(f"✅ Admin user seeded: {admin_email}")
+            print(f"[OK] Admin user seeded: {admin_email}")
 
 # Configure CORS
 app.add_middleware(
@@ -322,4 +322,4 @@ def consult_agent(request: AgentRequest):
 # --- MCP CHAT ENDPOINT (PHASE III) ---
 from src.backend.mcp_server.chat_endpoint import router as chat_router
 app.include_router(chat_router)
-print("✅ Chat router successfully included")
+print("[OK] Chat router successfully included")

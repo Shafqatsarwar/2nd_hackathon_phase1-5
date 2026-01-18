@@ -7,7 +7,8 @@ export const fetcher = async (url: string, token: string) => {
     });
 
     if (!res.ok) {
-        throw new Error("An error occurred while fetching the data.");
+        const errorText = await res.text().catch(() => "No error body");
+        throw new Error(`Error ${res.status} fetching ${url}: ${errorText}`);
     }
 
     return res.json();

@@ -25,6 +25,18 @@ const nextConfig: NextConfig = {
     });
     return config;
   },
+  async rewrites() {
+    return [
+      {
+        source: "/api/auth/:path*",
+        destination: "/api/auth/:path*",
+      },
+      {
+        source: "/api/:path((?!auth).*)",
+        destination: `${process.env.NEXT_PUBLIC_BACKEND_URL}/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

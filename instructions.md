@@ -1,151 +1,48 @@
-# 🛠️ Dashboard & Deployment Instructions
+# ☁️ Beginner's Cloud & Infra Guide: 2nd_hackathon_phase1-5
 
-This guide covers everything you need to know about deploying "The Evolution of Todo" using **Docker** (Phase 1-4) and **Kubernetes**.
+If you're new to Docker, Kubernetes, or Cloud deployment for **2nd_hackathon_phase1-5**, follow these simple guidelines.
 
----
+## 🐳 1. Docker Basics
+Think of Docker as a "box" that contains everything your app needs to run.
 
-## 🐳 Docker Deployment (Recommended)
+- **Check if Docker is running**: `docker v` or `docker ps`
+- **Build a Docker image**: `docker build -t app-name .`
+- **Run a container**: `docker run -p 3000:3000 app-name`
+- **Stop everything**: `docker-compose down`
 
-We have created an **automated deployment script** that handles everything for you.
+**Shortcut**: Just use `./deploy-docker.sh` to build and start everything automatically.
 
-### Option 1: Automated Deployment (Easiest)
+## ☸️ 2. Kubernetes (K8s) Basics
+Kubernetes is the tool that manages many Docker "boxes" across multiple servers.
 
-**1. Navigate to the project directory:**
-```bash
-cd ~/Projects/2nd_hackathon-phase1-4
-```
+- **Pods**: Smallest unit (runs your container).
+- **Services**: Makes your app reachable on a network.
+- **Helm**: A "package manager" for Kubernetes. It simplifies complex deployments.
 
-**2. Make the script executable:**
-```bash
-chmod +x deploy-docker.sh
-```
+### How to deploy to K8s locally:
+1. Enable Kubernetes in Docker Desktop.
+2. Run: `helm install todo-app ./helm-chart -f local-secrets.yaml`
+3. View your pods: `kubectl get pods`
 
-**3. Run the deployment script:**
-```bash
-./deploy-docker.sh
-```
+## 🚀 3. Cloud Deployment (The "Big League")
 
-**This script will automatically:**
-- Create the `.env` file with your secure keys
-- Build Docker images for Backend and Frontend
-- Stop any conflicting containers
-- Start all services using `docker-compose`
-- Perform health checks
+### Vercel (Frontend)
+Vercel is great for Next.js.
+- **Option A (GitHub)**: Connect your repo to Vercel dashboard. It deploys every time you push.
+- **Option B (Terminal)**: Use the command line.
+  1. Run `npm i -g vercel` (if not installed).
+  2. Run `vercel` in your project folder.
+- **Important**: Add your `.env` variables in the Vercel Dashboard settings.
 
-**Once finished, access your app:**
-- **Frontend UI:** [http://localhost:3000](http://localhost:3000)
-- **Backend API:** [http://localhost:8000/docs](http://localhost:8000/docs)
-- **Database:** `localhost:5432`
+### Cloud Backend (Vercel/Neon/Azure)
+- **Database**: We use **Neon PostgreSQL**. It's serverless and easy to scale.
+- **FastAPI**: Can be deployed as a serverless function on Vercel or in a container on Azure/GCP.
 
----
-
-### Option 2: Manual Docker Deployment
-
-If you prefer to run commands manually:
-
-**1. Build Images:**
-```bash
-# Backend (2-3 min)
-docker build -f Dockerfile.backend -t todo-backend:latest .
-
-# Frontend (3-5 min)
-docker build -f Dockerfile.frontend -t todo-frontend:latest .
-```
-
-**2. Create .env File:**
-Ensure you have a `.env` file in the root directory with the following variables:
-- `DATABASE_URL`
-- `BETTER_AUTH_SECRET`
-- `OPENAI_API_KEY`
-- `GITHUB_TOKEN` (Optional)
-
-**3. Start Services:**
-```bash
-docker-compose up -d
-```
-
-**4. View Logs:**
-```bash
-docker-compose logs -f
-```
+## 🛡️ Important Safety Rules
+1. **NEVER** push your API keys to GitHub.
+2. If you see a file mentioned in `api.md`, check it twice before committing.
+3. If `kubectl` or `docker` commands fail, check if the service is actually started on your computer.
 
 ---
-
-## ☸️ Kubernetes Deployment (Proven Defense Strategy)
-
-Follow these **exact numbered commands** to deploy the application during your presentation.
-
-### 1. Pre-Flight Check & Cleanup
-Ensure Docker ports used by local dev are free.
-
-```bash
-docker-compose down
-```
-
-### 2. Install Helm (If missing)
-If `helm` command is not found:
-
-```bash
-curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-```
-
-### 3. Deploy Application
-This uses the custom chart we built.
-
-```bash
-helm upgrade --install todo-app ./helm-chart -f local-secrets.yaml
-```
-
-### 4. Verify Pods
-Check that pods are running.
-
-```bash
-kubectl get pods
-```
-
-*(If Backend is 0/1, wait 30 seconds. If stuck, run restart command below)*
-
-### 5. Force Restart (Fix for Startup Timing)
-If backend says `CrashLoopBackOff`, run this to fix it instantly:
-
-```bash
-kubectl rollout restart deployment todo-app-backend
-```
-
-### 6. Access Application (Port Forward)
-Run these commands in separate terminals (or background) to open the tunnels:
-
-```bash
-# Terminal 1: Frontend -> http://localhost:3000
-kubectl port-forward svc/todo-app-frontend-service 3000:3000 &
-
-# Terminal 2: Backend -> http://localhost:8000
-kubectl port-forward svc/todo-app-backend-service 8000:8000 &
-```
-
-### 🔓 Restoration Step (For Judges/Review)
-To make the application work, you must restore the API keys in `deploy-docker.sh` and `local-secrets.yaml` if they were removed for the repo push.
-
-
----
-
-## 🔎 Useful Commands
-
-| Action | Command |
-|--------|---------|
-| **Stop Docker** | `docker-compose down` |
-| **Restart Docker** | `docker-compose restart` |
-| **Check Logs** | `docker-compose logs -f` |
-| **K8s Status** | `kubectl get pods` |
-| **Uninstall Helm** | `helm uninstall todo-app` |
-
----
-
-## 🤖 AI Features
-
-Once deployed, the following AI features will be active:
-- **Smart Chatbot:** Ask questions about tasks, weather, or GitHub.
-- **Task Analysis:** Auto-generates tags and priority suggestions.
-- **Voice Mode:** Speak to your todo list (browser-supported).
-
-Enjoy your cloud-native AI application! 🚀
+*Follow these steps in order: Local -> Docker -> Cloud.*
+🚀 Happy Deploying!
